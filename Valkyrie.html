@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valkyrie - Web Image Optimiser</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #111827, #000000, #111827);
+            color: white;
+            padding: 2rem;
+        }
+        .container { max-width: 64rem; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .title {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            font-size: 1rem;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .description {
+            background: rgba(17, 24, 39, 0.3);
+            backdrop-filter: blur(12px);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(55, 65, 81, 0.5);
+            margin-bottom: 2rem;
+        }
+        .description p { margin-bottom: 0.75rem; font-size: 0.875rem; color: #d1d5db; }
+        .description p:first-child { color: #f3f4f6; font-weight: 500; }
+        .description strong { color: #3b82f6; }
+        .upload-zone {
+            border: 2px dashed #374151;
+            border-radius: 1rem;
+            padding: 4rem;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(17, 24, 39, 0.5);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s;
+        }
+        .upload-zone:hover { border-color: #3b82f6; }
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            color: #4b5563;
+        }
+        .upload-text { font-size: 1.25rem; color: #d1d5db; margin-bottom: 0.5rem; }
+        .upload-subtext { font-size: 0.875rem; color: #6b7280; }
+        .hidden { display: none; }
+        .results {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid #374151;
+            margin-top: 2rem;
+        }
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .results-title { font-size: 1.25rem; font-weight: 300; }
+        .success-gif {
+            width: 400px;
+            height: auto;
+            margin: 0 auto 2rem;
+            display: none;
+            border-radius: 0.5rem;
+        }
+        .success-gif.show {
+            display: block;
+        }
+        .stats {
+            background: rgba(31, 41, 55, 0.5);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr auto;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #374151;
+            align-items: center;
+        }
+        .stats-row:first-child { border-bottom: 1px solid #4b5563; padding-bottom: 1rem; margin-bottom: 0.5rem; }
+        .stats-row:last-child { border-bottom: none; }
+        .stat-label { color: #9ca3af; font-size: 0.875rem; font-weight: 500; }
+        .stat-value { color: white; font-size: 1rem; }
+        .stat-size { font-weight: 500 !important; }
+        .stat-size-original { color: #ef4444 !important; }
+        .stat-size-sd { color: #0ea5e9 !important; }
+        .stat-size-hd { color: #3b82f6 !important; }
+        .stat-size-fhd { color: #1e40af !important; }
+        .clear-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 0.375rem;
+            color: #9ca3af;
+            font-weight: 400;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            width: 95px;
+        }
+        .clear-btn:hover { background: #374151; color: white; }
+        .clear-btn svg { width: 14px; height: 14px; }
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: transparent;
+            border: 1px solid;
+            border-radius: 0.375rem;
+            color: white;
+            font-weight: 400;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            width: 95px;
+        }
+        .download-btn:hover { background: rgba(255, 255, 255, 0.05); }
+        .download-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .download-btn svg { width: 14px; height: 14px; }
+        .download-btn-sd { border-color: #0ea5e9; color: #0ea5e9; }
+        .download-btn-sd:hover { background: rgba(14, 165, 233, 0.1); }
+        .download-btn-hd { border-color: #3b82f6; color: #3b82f6; }
+        .download-btn-hd:hover { background: rgba(59, 130, 246, 0.1); }
+        .download-btn-fhd { border-color: #1e40af; color: #1e40af; }
+        .download-btn-fhd:hover { background: rgba(30, 64, 175, 0.1); }
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #4b5563;
+        }
+        @media (max-width: 640px) {
+            .title { font-size: 2rem; }
+            .stats-row { 
+                grid-template-columns: 1fr; 
+                gap: 0.5rem;
+                text-align: center;
+            }
+            .download-btn, .clear-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">VALKYRIE</h1>
+            <p class="subtitle">Web Image Optimiser</p>
+        </div>
+
+        <div id="description" class="description">
+            <p>A precision tool built for developers who care about performance.</p>
+            <p><strong>What it does:</strong> Resizes images to SD (640px), HD (1280px), and FHD (1920px) widths, maintains perfect aspect ratio, and converts to WebP at 60% quality.</p>
+            <p><strong>Why it matters:</strong> Faster pages mean better SEO, lower bandwidth costs, happier users, and higher conversions.</p>
+            <p><strong>How it works:</strong> Upload an image, Valkyrie handles compression and conversion, download all three optimized versions.</p>
+        </div>
+
+        <div id="uploadZone" class="upload-zone">
+            <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <p class="upload-text">Drop your image here</p>
+            <p class="upload-subtext">or click to browse</p>
+            <input type="file" id="fileInput" accept="image/*" class="hidden">
+        </div>
+
+        <img id="successGif" src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHd5aG93MzU0Z2kzc3FoNnVtYWtqd3pkbG54bGViZmRodjBudG1waiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/zCME2Cd20Czvy/giphy.gif" alt="Optimization finished 👍" class="success-gif" onerror="this.alt='Optimization finished 👍'; this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <div id="gifFallback" class="results-title hidden" style="text-align: center; margin-bottom: 2rem;">Optimization finished 👍</div>
+
+        <div id="results" class="results hidden">
+            <div class="stats">
+                <div class="stats-row">
+                    <div class="stat-label">Original</div>
+                    <div class="stat-value" id="originalDims">0 × 0px</div>
+                    <div class="stat-size stat-size-original" id="originalSize">0 KB</div>
+                    <button id="clearBtn" class="clear-btn">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Clear
+                    </button>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-label">SD (640px)</div>
+                    <div class="stat-value" id="sdDims">0 × 0px</div>
+                    <div class="stat-size stat-size-sd" id="sdSize">0 KB</div>
+                    <button id="downloadSD" class="download-btn download-btn-sd" disabled>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Download
+                    </button>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-label">HD (1280px)</div>
+                    <div class="stat-value" id="hdDims">0 × 0px</div>
+                    <div class="stat-size stat-size-hd" id="hdSize">0 KB</div>
+                    <button id="downloadHD" class="download-btn download-btn-hd" disabled>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Download
+                    </button>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-label">FHD (1920px)</div>
+                    <div class="stat-value" id="fhdDims">0 × 0px</div>
+                    <div class="stat-size stat-size-fhd" id="fhdSize">0 KB</div>
+                    <button id="downloadFHD" class="download-btn download-btn-fhd" disabled>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Download
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Images are processed locally in your browser. No uploads to servers.</p>
+        </div>
+    </div>
+
+    <script>
+        let processedImages = { sd: null, hd: null, fhd: null };
+        let fileName = '';
+
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const results = document.getElementById('results');
+        const description = document.getElementById('description');
+        const successGif = document.getElementById('successGif');
+        const gifFallback = document.getElementById('gifFallback');
+        const downloadSD = document.getElementById('downloadSD');
+        const downloadHD = document.getElementById('downloadHD');
+        const downloadFHD = document.getElementById('downloadFHD');
+        const clearBtn = document.getElementById('clearBtn');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                fileName = file.name.split('.')[0];
+                processFile(file);
+            }
+        });
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const originalWidth = img.width;
+                    const originalHeight = img.height;
+                    const originalSize = file.size;
+
+                    document.getElementById('originalDims').textContent = `${originalWidth} × ${originalHeight}px`;
+                    document.getElementById('originalSize').textContent = formatFileSize(originalSize);
+
+                    // Process all three sizes
+                    processSize(img, 640, 'sd');
+                    processSize(img, 1280, 'hd');
+                    processSize(img, 1920, 'fhd');
+
+                    uploadZone.classList.add('hidden');
+                    description.classList.add('hidden');
+                    successGif.classList.add('show');
+                    results.classList.remove('hidden');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function processSize(img, targetWidth, type) {
+            const aspectRatio = img.height / img.width;
+            const targetHeight = Math.round(targetWidth * aspectRatio);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    processedImages[type] = URL.createObjectURL(blob);
+                    
+                    document.getElementById(`${type}Dims`).textContent = `${targetWidth} × ${targetHeight}px`;
+                    document.getElementById(`${type}Size`).textContent = formatFileSize(blob.size);
+
+                    if (type === 'sd') downloadSD.disabled = false;
+                    if (type === 'hd') downloadHD.disabled = false;
+                    if (type === 'fhd') downloadFHD.disabled = false;
+                }
+            }, 'image/webp', 0.6);
+        }
+
+        downloadSD.addEventListener('click', () => downloadImage('sd', 640));
+        downloadHD.addEventListener('click', () => downloadImage('hd', 1280));
+        downloadFHD.addEventListener('click', () => downloadImage('fhd', 1920));
+
+        function downloadImage(type, width) {
+            if (processedImages[type]) {
+                const a = document.createElement('a');
+                a.href = processedImages[type];
+                a.download = `${fileName}_${width}px.webp`;
+                a.click();
+            }
+        }
+
+        clearBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            processedImages = { sd: null, hd: null, fhd: null };
+            fileName = '';
+            uploadZone.classList.remove('hidden');
+            description.classList.remove('hidden');
+            successGif.classList.remove('show');
+            gifFallback.classList.add('hidden');
+            results.classList.add('hidden');
+            downloadSD.disabled = true;
+            downloadHD.disabled = true;
+            downloadFHD.disabled = true;
+        });
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

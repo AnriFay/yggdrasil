@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loki - Media Scraper</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #064e3b, #000000, #064e3b);
+            color: white;
+            padding: 2rem;
+        }
+        .container { max-width: 64rem; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .title {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            font-size: 1rem;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .description {
+            background: rgba(6, 78, 59, 0.3);
+            backdrop-filter: blur(12px);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            margin-bottom: 2rem;
+        }
+        .description p { margin-bottom: 0.75rem; font-size: 0.875rem; color: #d1d5db; }
+        .description p:first-child { color: #f3f4f6; font-weight: 500; }
+        .description strong { color: #10b981; }
+        .input-zone {
+            border: 2px solid #065f46;
+            border-radius: 1rem;
+            padding: 2rem;
+            background: rgba(6, 78, 59, 0.5);
+            backdrop-filter: blur(12px);
+            margin-bottom: 2rem;
+        }
+        .input-label {
+            font-size: 0.875rem;
+            color: #d1d5db;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .html-input {
+            width: 100%;
+            min-height: 200px;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #065f46;
+            border-radius: 0.5rem;
+            color: #10b981;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        .html-input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+        .html-input::placeholder {
+            color: #6b7280;
+        }
+        .scrape-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(to right, #059669, #047857);
+            border: none;
+            border-radius: 0.75rem;
+            color: white;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .scrape-btn:hover {
+            background: linear-gradient(to right, #047857, #065f46);
+        }
+        .scrape-btn:disabled {
+            background: linear-gradient(to right, #374151, #374151);
+            cursor: not-allowed;
+        }
+        .hidden { display: none; }
+        .success-gif {
+            width: 400px;
+            height: auto;
+            margin: 0 auto 2rem;
+            display: none;
+            border-radius: 0.5rem;
+        }
+        .success-gif.show {
+            display: block;
+        }
+        .results {
+            background: rgba(6, 78, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid #065f46;
+            margin-top: 2rem;
+        }
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .results-title { font-size: 1.25rem; font-weight: 300; }
+        .clear-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 0.375rem;
+            color: #9ca3af;
+            font-weight: 400;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .clear-btn:hover { background: #374151; color: white; }
+        .clear-btn svg { width: 14px; height: 14px; }
+        .stats {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            text-align: center;
+        }
+        .stat-item {
+            padding: 0.75rem;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #10b981;
+            margin-bottom: 0.25rem;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
+        .media-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .media-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #065f46;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto auto auto auto auto;
+            gap: 1rem;
+            align-items: center;
+        }
+        .media-type-badge {
+            display: inline-block;
+            padding: 0.375rem 0.625rem;
+            background: #065f46;
+            color: #10b981;
+            font-size: 0.625rem;
+            font-weight: 600;
+            border-radius: 0.25rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .media-filename {
+            font-size: 0.875rem;
+            color: #d1d5db;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .media-extension {
+            font-size: 0.75rem;
+            color: #10b981;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .media-size {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            white-space: nowrap;
+        }
+        .media-metadata {
+            font-size: 0.75rem;
+            color: #6ee7b7;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-style: italic;
+        }
+        .media-metadata.empty {
+            color: #4b5563;
+        }
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: transparent;
+            border: 1px solid #059669;
+            border-radius: 0.375rem;
+            color: #059669;
+            font-weight: 400;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .download-btn:hover {
+            background: rgba(5, 150, 105, 0.1);
+        }
+        .download-btn svg { width: 14px; height: 14px; }
+        .copy-url-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: transparent;
+            border: 1px solid #10b981;
+            border-radius: 0.375rem;
+            color: #10b981;
+            font-weight: 400;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .copy-url-btn:hover {
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .copy-url-btn.copied {
+            background: #10b981;
+            color: white;
+        }
+        .copy-url-btn svg { width: 14px; height: 14px; }
+        .button-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: #fca5a5;
+            margin-top: 1rem;
+        }
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        @media (max-width: 640px) {
+            .title { font-size: 2rem; }
+            .stats { grid-template-columns: 1fr; }
+            .media-item {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            .button-row {
+                justify-content: stretch;
+            }
+            .download-btn, .copy-url-btn {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">LOKI</h1>
+            <p class="subtitle">Media Scraper</p>
+        </div>
+
+        <div id="description" class="description">
+            <p>A powerful tool for extracting media URLs from HTML source code.</p>
+            <p><strong>What it does:</strong> Analyzes HTML source code and extracts all image and video URLs instantly.</p>
+            <p><strong>Why it matters:</strong> No CORS issues, no backend needed - just paste HTML and get all media URLs.</p>
+            <p><strong>How it works:</strong> Right-click on any webpage → View Page Source → Copy all HTML → Paste here → Extract media.</p>
+        </div>
+
+        <div class="input-zone">
+            <label class="input-label" for="htmlInput">Paste HTML source code here:</label>
+            <textarea 
+                id="htmlInput" 
+                class="html-input" 
+                placeholder="Paste the full HTML source code of the page you want to scrape...
+
+How to get it:
+1. Go to any webpage
+2. Right-click and select 'View Page Source' (or press Ctrl+U / Cmd+Option+U)
+3. Select all (Ctrl+A / Cmd+A) and copy (Ctrl+C / Cmd+C)
+4. Paste it here"
+            ></textarea>
+            <button id="scrapeBtn" class="scrape-btn">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                Extract Media
+            </button>
+        </div>
+
+        <div id="error" class="error hidden"></div>
+
+        <img id="successGif" src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExaHUya3V3ZDU5NnhycHJ2a2t1OHFhYmZ4dW9teGN3NnN1anJ2ank4eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/BlrTLd1ml3A52/giphy.gif" alt="Media extracted!" class="success-gif">
+
+        <div id="results" class="results hidden">
+            <div class="results-header">
+                <h2 class="results-title">Media Extracted 🎯</h2>
+                <button id="clearBtn" class="clear-btn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Clear
+                </button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">Total Media</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="imageCount">0</div>
+                    <div class="stat-label">Images</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="videoCount">0</div>
+                    <div class="stat-label">Videos</div>
+                </div>
+            </div>
+
+            <div id="mediaGrid" class="media-grid"></div>
+        </div>
+
+        <div class="footer">
+            <p>✨ No CORS restrictions • Works with any website • All processing happens locally in your browser</p>
+        </div>
+    </div>
+
+    <script>
+        const htmlInput = document.getElementById('htmlInput');
+        const scrapeBtn = document.getElementById('scrapeBtn');
+        const error = document.getElementById('error');
+        const results = document.getElementById('results');
+        const successGif = document.getElementById('successGif');
+        const mediaGrid = document.getElementById('mediaGrid');
+        const totalCount = document.getElementById('totalCount');
+        const imageCount = document.getElementById('imageCount');
+        const videoCount = document.getElementById('videoCount');
+        const clearBtn = document.getElementById('clearBtn');
+        const description = document.getElementById('description');
+        const inputZone = document.querySelector('.input-zone');
+
+        scrapeBtn.addEventListener('click', extractMedia);
+        clearBtn.addEventListener('click', clearResults);
+
+        function extractMedia() {
+            const html = htmlInput.value.trim();
+            
+            if (!html) {
+                showError('Please paste HTML source code');
+                return;
+            }
+
+            hideError();
+
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Extract images from various sources
+                const imgElements = doc.querySelectorAll('img');
+                const images = [];
+                
+                imgElements.forEach(img => {
+                    const sources = [img.src, img.dataset?.src, img.dataset?.lazySrc, img.getAttribute('data-src')];
+                    sources.forEach(src => {
+                        if (src && isValidUrl(src)) {
+                            images.push({
+                                src: src,
+                                alt: img.alt || '',
+                                title: img.title || '',
+                                ariaLabel: img.getAttribute('aria-label') || '',
+                                caption: img.getAttribute('data-caption') || ''
+                            });
+                        }
+                    });
+                });
+
+                // Extract videos
+                const videoElements = doc.querySelectorAll('video, source');
+                const videos = [];
+                
+                videoElements.forEach(video => {
+                    const sources = [video.src, video.dataset?.src];
+                    sources.forEach(src => {
+                        if (src && isValidUrl(src)) {
+                            videos.push({
+                                src: src,
+                                alt: video.getAttribute('title') || '',
+                                title: video.title || '',
+                                ariaLabel: video.getAttribute('aria-label') || '',
+                                caption: video.getAttribute('data-caption') || ''
+                            });
+                        }
+                    });
+                });
+
+                // Extract from style backgrounds
+                const allElements = doc.querySelectorAll('*');
+                allElements.forEach(el => {
+                    const style = el.getAttribute('style');
+                    if (style) {
+                        const urlMatches = style.match(/url\(['"]?(.*?)['"]?\)/g);
+                        if (urlMatches) {
+                            urlMatches.forEach(match => {
+                                const url = match.replace(/url\(['"]?|['"]?\)/g, '');
+                                if (isValidUrl(url) && isImageUrl(url)) {
+                                    images.push({
+                                        src: url,
+                                        alt: el.getAttribute('aria-label') || '',
+                                        title: el.title || '',
+                                        ariaLabel: el.getAttribute('aria-label') || '',
+                                        caption: ''
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
+
+                // Remove duplicates by URL
+                const uniqueImages = [];
+                const seenUrls = new Set();
+                images.forEach(img => {
+                    if (!seenUrls.has(img.src)) {
+                        seenUrls.add(img.src);
+                        uniqueImages.push(img);
+                    }
+                });
+                
+                const uniqueVideos = [];
+                const seenVideoUrls = new Set();
+                videos.forEach(vid => {
+                    if (!seenVideoUrls.has(vid.src)) {
+                        seenVideoUrls.add(vid.src);
+                        uniqueVideos.push(vid);
+                    }
+                });
+
+                const imageArray = uniqueImages.map(item => ({ type: 'image', ...item }));
+                const videoArray = uniqueVideos.map(item => ({ type: 'video', ...item }));
+                const allMedia = [...imageArray, ...videoArray];
+
+                if (allMedia.length === 0) {
+                    showError('No media files found in the HTML source code');
+                    return;
+                }
+
+                displayResults(allMedia, imageArray.length, videoArray.length);
+                
+            } catch (err) {
+                showError('Failed to parse HTML: ' + err.message);
+            }
+        }
+
+        function isValidUrl(string) {
+            try {
+                const url = new URL(string, window.location.href);
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch (_) {
+                return string && (string.startsWith('http://') || string.startsWith('https://') || string.startsWith('//'));
+            }
+        }
+
+        function isImageUrl(url) {
+            return /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)(\?|$)/i.test(url);
+        }
+
+        function displayResults(media, imgCount, vidCount) {
+            mediaGrid.innerHTML = '';
+            totalCount.textContent = media.length;
+            imageCount.textContent = imgCount;
+            videoCount.textContent = vidCount;
+            
+            media.forEach((item) => {
+                const mediaItem = document.createElement('div');
+                mediaItem.className = 'media-item';
+                
+                // Type badge
+                const badge = document.createElement('span');
+                badge.className = 'media-type-badge';
+                badge.textContent = item.type;
+                
+                // Filename
+                const filename = document.createElement('div');
+                filename.className = 'media-filename';
+                const urlParts = item.src.split('/');
+                const fileNameWithParams = urlParts[urlParts.length - 1];
+                const fileNameOnly = fileNameWithParams.split('?')[0];
+                
+                // Check if it's a Google-like URL with parameters (contains = signs)
+                let displayName;
+                if (fileNameWithParams.includes('=') && fileNameWithParams.length > 50) {
+                    // For embedded images with parameters, just show domain + truncated params
+                    try {
+                        const url = new URL(item.src);
+                        displayName = url.hostname + '/...' + fileNameWithParams.substring(fileNameWithParams.length - 20);
+                    } catch (e) {
+                        displayName = decodeURIComponent(fileNameOnly) || 'Unknown file';
+                    }
+                } else {
+                    // Normal file name
+                    displayName = decodeURIComponent(fileNameOnly) || 'Unknown file';
+                }
+                
+                // Cap to 50 characters
+                if (displayName.length > 50) {
+                    filename.textContent = displayName.substring(0, 47) + '...';
+                } else {
+                    filename.textContent = displayName;
+                }
+                filename.title = item.src; // Full URL on hover
+                
+                // Metadata
+                const metadata = document.createElement('div');
+                metadata.className = 'media-metadata';
+                const metaInfo = [item.alt, item.title, item.caption, item.ariaLabel]
+                    .filter(m => m && m.trim())
+                    .join(' • ');
+                if (metaInfo) {
+                    metadata.textContent = metaInfo;
+                    metadata.title = metaInfo;
+                } else {
+                    metadata.textContent = 'No metadata';
+                    metadata.classList.add('empty');
+                }
+                
+                // Extension
+                const extension = document.createElement('div');
+                extension.className = 'media-extension';
+                const ext = fileNameOnly.split('.').pop().toLowerCase();
+                extension.textContent = ext || 'unknown';
+                
+                // Size placeholder
+                const size = document.createElement('div');
+                size.className = 'media-size';
+                size.textContent = '—';
+                
+                // Download button
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'download-btn';
+                downloadBtn.innerHTML = `
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Download
+                `;
+                downloadBtn.onclick = () => downloadMedia(item.src);
+                
+                // Copy button
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-url-btn';
+                copyBtn.innerHTML = `
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Copy URL
+                `;
+                copyBtn.onclick = () => copyToClipboard(item.src, copyBtn);
+                
+                mediaItem.appendChild(badge);
+                mediaItem.appendChild(filename);
+                mediaItem.appendChild(metadata);
+                mediaItem.appendChild(extension);
+                mediaItem.appendChild(size);
+                mediaItem.appendChild(downloadBtn);
+                mediaItem.appendChild(copyBtn);
+                mediaGrid.appendChild(mediaItem);
+            });
+            
+            description.classList.add('hidden');
+            inputZone.classList.add('hidden');
+            successGif.classList.add('show');
+            results.classList.remove('hidden');
+        }
+
+        function downloadMedia(url) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = url.split('/').pop() || 'download';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.innerHTML;
+                button.classList.add('copied');
+                button.innerHTML = `
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Copied!
+                `;
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.classList.remove('hidden');
+        }
+
+        function hideError() {
+            error.classList.add('hidden');
+        }
+
+        function clearResults() {
+            htmlInput.value = '';
+            mediaGrid.innerHTML = '';
+            results.classList.add('hidden');
+            successGif.classList.remove('show');
+            inputZone.classList.remove('hidden');
+            description.classList.remove('hidden');
+            hideError();
+        }
+    </script>
+</body>
+</html>
